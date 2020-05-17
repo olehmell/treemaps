@@ -130,17 +130,17 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) =
           <Card.Body>
             <Card.Title className='d-flex justify-content-between'>
               <FormControl
-                className='col-4'
+                className='col-md-4 col-sm-12'
                 onBlur={positionInputOnChange}
                 onDragEnter={positionInputOnChange}
                 onKeyDown={onEnter}
                 placeholder='00.12345, 00.12345'
               />
-              <ToggleButtonGroup className="ml-4" type='radio' name='info-type' onClick={typeInfoHandle} value={typeInfo}>
+              <ToggleButtonGroup className="ml-4 col-md-4 col-sm-12" type='radio' name='info-type' onClick={typeInfoHandle} value={typeInfo}>
                 <ToggleButton variant='outline-warning' value='text'>Text</ToggleButton>
                 <ToggleButton variant='outline-warning' value='json'>Json</ToggleButton>
               </ToggleButtonGroup>
-              <Button className='col-4' variant="light" onClick={() => saveJson(JSON.stringify(generateInfo('json') as any, null, '\t'))}>Save to JSON</Button>
+              <Button className='col-md-4 col-sm-12' variant="light" onClick={() => saveJson(JSON.stringify(generateInfo('json') as any, null, '\t'))}>Save to JSON</Button>
             </Card.Title>
             <Card.Footer>
               {typeInfo === 'text' ? info : <ReactJson src={info} />}

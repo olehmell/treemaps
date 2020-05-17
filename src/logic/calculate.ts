@@ -26,7 +26,10 @@ export const calculate = ({ firstPanoData, secondPanoData }: Data) => {
     const outputData = treemap_calculator(inputData)
     return {
       id: new Date().toISOString(),
-      inputData,
+      user_id: 'Name',
+      session_id: 'Test',
+      firstPanoData,
+      secondPanoData,
       outputData
     }
   } catch (err) {
