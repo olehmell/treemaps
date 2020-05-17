@@ -2,33 +2,25 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import ReactStreetview from 'react-google-streetview';
 import { apiKey } from '../config';
 import { Card, Button, FormControl, ToggleButtonGroup, ToggleButton } from 'react-bootstrap'
-import { saveAs, encodeBase64 } from '@progress/kendo-file-saver';
 import { useGoogleMaps } from './GoogleMapsContext';
+import { PanoData } from '../types';
+import { saveJson } from '../logic/saveJson';
+import ReactJson from 'react-json-view'
 
-type Position = {
-  lat: number,
-  lng: number
+type InfoType = object | JSX.Element
+
+type Props = {
+  initialData?: PanoData,
+  setData: (data: PanoData) => void
 }
 
-type Pov = {
-  pitch: string,
-  heading: string
-}
-
-type ElevationData = {
-  elevation: number,
-  resolution: number
-}
-
-type InfoType = string | JSX.Element
-
-export const Pano = () => {
-    const [ position, setPosition ] = useState<Position>();
-    const [ pov, setPov ] = useState<Pov>();
-    const [ elevationData, setElevationData ] = useState<ElevationData>()
+export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) => {
+    const [ position, setPosition ] = useState(initialData?.position);
+    const [ pov, setPov ] = useState(initialData?.pov);
+    const [ elevationData, setElevationData ] = useState(initialData?.elevation)
     const [ getPosition, setGetPosition ] = useState();
     const [ typeInfo, setTypeInfo ] = useState('text')
-    const [ info, setInfo ] = useState<InfoType>('')
+    const [ info, setInfo ] = useState<InfoType>(<></>)
     const { state: { elevation } } = useGoogleMaps()
 
     const onChangePosition = (event: any) => {
@@ -40,6 +32,7 @@ export const Pano = () => {
       })
     }
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const onChangePov = (event: any) => {
       setPov({
         pitch: event.pitch,
@@ -63,10 +56,9 @@ export const Pano = () => {
     }
 
     const generateInfo = useCallback((type: string) => {
-      let info: InfoType = ''
+      if (!position || !elevationData || !pov) return <></>;
 
-      if (!position && !elevationData) return info;
-
+      setData({ position, pov, elevation: elevationData})
       const lat = position?.lat
       const lng = position?.lng
       const pitch = pov?.pitch || 0
@@ -76,24 +68,32 @@ export const Pano = () => {
 
       switch (type) {
         case 'text': {
-          info = <>
+          return <div>
             <div>Lat: {lat}</div>
             <div>Lng: {lng}</div>
             <div>Pitch: {pitch}</div>
             <div>Heading {heading}</div>
             <div>Elevation {elevation}</div>
             <div>Resolution: {resolution}</div>
-          </>
-          break;
+          </div>
         }
         case 'json': {
-          const json = { position, pitch, heading, elevation, resolution };
-          info = JSON.stringify(json, null, '\t')
-          break;
+          const id = new Date().toISOString()
+          return { 
+            id,
+            inputData: 
+            { position,
+              pitch,
+              heading,
+              elevation,
+              resolution
+            }
+          };
         }
       }
-      return info
-    }, [elevationData, position, pov])
+
+      return <></>
+    }, [elevationData, position, pov, setData])
 
     const typeInfoHandle = (event: any) => {
       const value = event.target.value;
@@ -110,12 +110,6 @@ export const Pano = () => {
         ([ value ]: any[]) => setElevationData(value))
     }, [elevation, getPosition])
 
-    const saveJson = () => {
-      const dataURI = "data:text/json;base64," + encodeBase64(generateInfo('json') as string);
-      const fileName = `${new Date().toISOString()}.json`
-      saveAs(dataURI, fileName)
-    }
-
     const viewPano = useMemo(() => <ReactStreetview
       apiKey={apiKey}
       streetViewPanoramaOptions={{
@@ -123,7 +117,7 @@ export const Pano = () => {
       }}
       onPositionChanged={onChangePosition}
       onPovChanged={onChangePov}
-    />, [ position ])
+    />, [ onChangePov, position])
 
 		return (
       <div
@@ -136,20 +130,21 @@ export const Pano = () => {
           <Card.Body>
             <Card.Title className='d-flex justify-content-between'>
               <FormControl
-              className='col-4'
-              onBlur={positionInputOnChange}
-              onDragEnter={positionInputOnChange}
-              onKeyDown={onEnter}
+                className='col-4'
+                onBlur={positionInputOnChange}
+                onDragEnter={positionInputOnChange}
+                onKeyDown={onEnter}
+                placeholder='00.12345, 00.12345'
               />
               <ToggleButtonGroup className="ml-4" type='radio' name='info-type' onClick={typeInfoHandle} value={typeInfo}>
-                <ToggleButton value='text'>Text</ToggleButton>
-                <ToggleButton value='json'>Json</ToggleButton>
+                <ToggleButton variant='outline-warning' value='text'>Text</ToggleButton>
+                <ToggleButton variant='outline-warning' value='json'>Json</ToggleButton>
               </ToggleButtonGroup>
-              <Button className='col-4' variant="secondary" onClick={saveJson}>Save to JSON</Button>
+              <Button className='col-4' variant="light" onClick={() => saveJson(JSON.stringify(generateInfo('json') as any, null, '\t'))}>Save to JSON</Button>
             </Card.Title>
-            <Card.Text>
-              {info}
-            </Card.Text>
+            <Card.Footer>
+              {typeInfo === 'text' ? info : <ReactJson src={info} />}
+            </Card.Footer>
           </Card.Body>
         </Card>
 			</div>
