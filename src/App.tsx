@@ -3,7 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/App.scss';
 import { Pano } from './components/Pano';
 import GoogleMapsWrapper from './components/GoogleMapsContext'
-import { Button, FormControl, FormLabel, Alert } from 'react-bootstrap';
+import { Button, FormControl, FormLabel } from 'react-bootstrap';
 import { PanoData } from './types';
 import { saveJson } from './logic/saveJson'
 import ReactJson from 'react-json-view';

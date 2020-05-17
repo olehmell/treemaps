@@ -1,6 +1,10 @@
 {
   "name": "treemap-project",
   "version": "0.1.0",
+  "author": {
+    "name": "OlehMell",
+    "email": "oleh.nau.branch@ieee.org"
+  },
   "private": true,
   "dependencies": {
     "@progress/kendo-file-saver": "^1.1.0",
@@ -18,6 +22,7 @@
     "react": "^16.13.1",
     "react-bootstrap": "^1.0.1",
     "react-dom": "^16.13.1",
+    "react-google-streetview": "^0.0.9",
     "react-json-view": "^1.19.1",
     "react-scripts": "3.4.1",
     "react-streetview": "^1.1.1",
