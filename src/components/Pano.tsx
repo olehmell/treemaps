@@ -15,6 +15,7 @@ type Props = {
 }
 
 export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) => {
+  console.log(initialData)
     const [ position, setPosition ] = useState(initialData?.position);
     const [ pov, setPov ] = useState(initialData?.pov);
     const [ elevationData, setElevationData ] = useState(initialData?.elevation)
@@ -68,14 +69,14 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) =
 
       switch (type) {
         case 'text': {
-          return <div>
+          return <>
             <div>Lat: {lat}</div>
             <div>Lng: {lng}</div>
             <div>Pitch: {pitch}</div>
             <div>Heading {heading}</div>
             <div>Elevation {elevation}</div>
             <div>Resolution: {resolution}</div>
-          </div>
+          </>
         }
         case 'json': {
           const id = new Date().toISOString()
@@ -113,11 +114,12 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) =
     const viewPano = useMemo(() => <ReactStreetview
       apiKey={apiKey}
       streetViewPanoramaOptions={{
-        position: position
+        position: position || initialData?.position,
+        pov: initialData?.pov
       }}
       onPositionChanged={onChangePosition}
       onPovChanged={onChangePov}
-    />, [ onChangePov, position])
+    />, [ onChangePov, position, initialData ])
 
 		return (
       <div

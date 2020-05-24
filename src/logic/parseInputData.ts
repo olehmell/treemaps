@@ -1,6 +1,6 @@
 import { InitialData } from "../types";
 
-export const parseJsonFromFile = async (file: any) => {
+export const parseJsonFromFile = async (file: any): Promise<InitialData> => {
   return new Promise(function(resolve) {
       const fileread = new FileReader();
         fileread.onload = function(e) {
@@ -14,10 +14,4 @@ export const parseJsonFromFile = async (file: any) => {
 
       fileread.readAsText(file);
   })
-}
-
-export const parseInputJson = (json: InitialData) => {
-  if (json.outputData) {
-    return;
-  }
 }

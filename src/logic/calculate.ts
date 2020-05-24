@@ -1,4 +1,4 @@
-import { PanoData, InputData } from './../types';
+import { PanoData, InputData, InitialData } from './../types';
 import { treemap_calculator } from './calculator';
 
 type Data = {
@@ -23,15 +23,26 @@ export const calculate = ({ firstPanoData, secondPanoData }: Data) => {
       longB_d,
       azBA_d
     }
-    const outputData = treemap_calculator(inputData)
+    const { lat_A_d, long_A_d, a_r, b_r, c_r } = treemap_calculator(inputData)
     return {
       id: new Date().toISOString(),
       user_id: 'Name',
       session_id: 'Test',
-      firstPanoData,
-      secondPanoData,
-      outputData
-    }
+      outputData: {
+        position: {
+          latAndLong: `${lat_A_d}, ${long_A_d}`,
+          lat_A_d,
+          long_A_d
+        },
+        a_r,
+        b_r,
+        c_r
+      },
+      inputData: {
+        firstPanoData,
+        secondPanoData
+      }
+    } as InitialData
   } catch (err) {
     console.log(err.message)
     return { error: err.message }

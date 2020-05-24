@@ -30,14 +30,23 @@ export type InputData = {
 };
 
 export type OutputData = {
-  lat_A_d: number,
-  long_A_d: number,
+  position: {
+    latAndLong: string,
+    lat_A_d: number,
+    long_A_d: number,
+  }
   a_r: number,
   b_r: number,
   c_r: number
 }
 
 export type InitialData = {
-  inputData: PanoData | InputData,
+  id: string,
+  user_id: string,
+  session_id: string,
+  inputData: {
+    firstPanoData: PanoData,
+    secondPanoData: PanoData
+  },
   outputData?: OutputData
 }

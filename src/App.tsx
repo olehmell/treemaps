@@ -4,7 +4,7 @@ import './styles/App.scss';
 import { Pano } from './components/Pano';
 import GoogleMapsWrapper from './components/GoogleMapsContext'
 import { Button, FormControl, FormLabel } from 'react-bootstrap';
-import { PanoData } from './types';
+import { PanoData, InitialData } from './types';
 import { saveJson } from './logic/saveJson'
 import ReactJson from 'react-json-view';
 import { calculate } from './logic/calculate';
@@ -13,12 +13,16 @@ import { parseJsonFromFile } from './logic/parseInputData';
 function App() {
   const [ firstPanoData, setFirstData ] = useState<PanoData>()
   const [ secondPanoData, setSecondData ] = useState<PanoData>()
-  const [ calculateData, setCalculateData ] = useState<object | null>(null)
+  const [ calculateData, setCalculateData ] = useState<InitialData | null>(null)
 
   const onSelectInitialFile = async (e: any) => {
     const file = e.target.files[0];
     const res = await parseJsonFromFile(file)
-    console.log(res)
+    const { inputData: { firstPanoData, secondPanoData } } = res;
+    firstPanoData && setFirstData(firstPanoData)
+    secondPanoData && setSecondData(secondPanoData)
+    
+    res && setCalculateData(res)
   }
 
   return (
@@ -44,7 +48,7 @@ function App() {
               onClick={() => {
                 console.log('Calculating...')
                 const res = calculate({ firstPanoData, secondPanoData })
-                res && setCalculateData(res)
+                res && setCalculateData(res as InitialData)
               }}
             >Calculate</Button>
             <Button variant="light" onClick={() => saveJson(JSON.stringify(calculateData, null, '\t'))}>Save to JSON</Button>
