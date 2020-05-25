@@ -12,6 +12,12 @@ $body-bg: #fff;
 
 .pano {
   height: 77.5vh;
+  .NavMap {
+    z-index: 100;
+    bottom: 5rem;
+    height: 25% !important;
+    width: 25% !important;
+  }
 }
 
 .card {

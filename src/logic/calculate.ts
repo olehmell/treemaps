@@ -1,10 +1,19 @@
-import { PanoData, InputData, InitialData } from './../types';
+import { InputPanoData, InitialData } from './../types';
 import { treemap_calculator } from './calculator';
 
 type Data = {
-  firstPanoData?: PanoData,
-  secondPanoData?: PanoData
+  firstPanoData?: InputPanoData,
+  secondPanoData?: InputPanoData
 }
+
+type InputData = {
+  latC_d: number,
+  longC_d: number,
+  azCA_d: number,
+  latB_d: number,
+  longB_d: number,
+  azBA_d:number
+};
 
 export const calculate = ({ firstPanoData, secondPanoData }: Data) => {
   try {

@@ -1,4 +1,5 @@
 export type Position = {
+    latAndLong?: string,
     lat: number,
     lng: number
   }
@@ -14,20 +15,16 @@ export type ElevationData = {
 }
 
 
-export type PanoData = { 
+export type InputPanoData = {
   position: Position,
   pov: Pov,
   elevation: ElevationData
 }
 
-export type InputData = {
-  latC_d: number,
-  longC_d: number,
-  azCA_d: number,
-  latB_d: number,
-  longB_d: number,
-  azBA_d:number
-};
+export type PanoType = {
+  id: string,
+  inputData: InputPanoData
+}
 
 export type OutputData = {
   position: {
@@ -45,8 +42,8 @@ export type InitialData = {
   user_id: string,
   session_id: string,
   inputData: {
-    firstPanoData: PanoData,
-    secondPanoData: PanoData
+    firstPanoData: InputPanoData,
+    secondPanoData: InputPanoData
   },
   outputData?: OutputData
 }
