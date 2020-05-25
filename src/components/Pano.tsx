@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import ReactStreetview from 'react-google-streetview';
 import { apiKey } from '../config';
-import { Card, Button, FormControl, ToggleButtonGroup, ToggleButton } from 'react-bootstrap'
+import { Card, Button, FormControl, ToggleButtonGroup, ToggleButton, ButtonGroup } from 'react-bootstrap'
 import { useGoogleMaps } from './GoogleMapsContext';
 import { InputPanoData, PanoType } from '../types';
 import { saveJson } from '../logic/saveJson';
@@ -133,8 +133,10 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) =
                 <ToggleButton variant='outline-warning' value='text'>Text</ToggleButton>
                 <ToggleButton variant='outline-warning' value='json'>Json</ToggleButton>
               </ToggleButtonGroup>
-              <JsonLoadFileInput onChange={onSelectInitialFile}/>
-              <Button className='col-md-2 col-sm-12' variant="light" onClick={() => saveJson(info, 'inputData')}>Save to JSON</Button>
+              <ButtonGroup vertical className='col-md-4 col-sm-12'>
+                <JsonLoadFileInput onChange={onSelectInitialFile}/>
+                <Button variant="light" onClick={() => saveJson(info, 'inputData')}>Save to JSON</Button>
+              </ButtonGroup>
             </Card.Title>
             <Card.Footer>
               {typeInfo === 'text' ? <ViewInputData inputData={info} /> : <ReactJson src={info} />}
