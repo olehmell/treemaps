@@ -115,11 +115,11 @@ export function treemap_calculator(in_dat) {
   return out_dat;
 }
 
-function deg2rad(a) {
+export function deg2rad(a) {
   return a/180*Math.PI;
 }
 
-function rad2deg(a) {
+export function rad2deg(a) {
   return a*180/Math.PI;
 }
 

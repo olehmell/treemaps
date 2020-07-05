@@ -8,50 +8,9 @@ $body-bg: #fff;
 
 .maps-module {
   line-height: 1.2rem;
-}
-
-.pano {
-  height: 77.5vh;
-  .NavMap {
-    z-index: 100;
-    bottom: 5rem;
-    height: 25% !important;
-    width: 25% !important;
-  }
+  height: 100vh;
 }
 
 .card {
   border-radius: 0;
-}
-
-.marker{
-  pointer-events: none;
-  position: absolute;
-  width: 50%;
-  height: 100%;
-  z-index: 10;
-}
-.marker:before,
-.marker:after{
-  content: '';
-  position: absolute; top: 0;
-  width: 1px;
-  height: 77.5%;
-  background-image: linear-gradient(red 33%, rgba(255, 255, 255,0) 0%);
-  background-position: center;
-  background-size: 2px 32px;
-}
-.marker:before{
-  left: calc(50% + 6px); 
-  top: 10px;
-}
-.marker:after{
-  right: calc(50% - 1.75rem); 
-  -webkit-transform: rotate(90deg);
-  transform: rotate(90deg);
-
-}
-.marker:hover:before,
-.marker:hover:after{
-  border-color: #f00;
 }

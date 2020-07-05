@@ -9,16 +9,10 @@ export type Pov = {
   heading: number
 }
 
-export type ElevationData = {
-  elevation: number,
-  resolution: number
-}
-
 
 export type InputPanoData = {
   position: Position,
-  pov: Pov,
-  elevation: ElevationData
+  pov: Pov
 }
 
 export type PanoType = {

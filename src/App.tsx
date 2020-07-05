@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/App.scss';
 import { Pano } from './components/Pano';
-import GoogleMapsWrapper from './components/GoogleMapsContext'
 import { Button } from 'react-bootstrap';
 import { InputPanoData, InitialData } from './types';
 import { saveJson } from './logic/saveJson'
@@ -25,7 +24,7 @@ function App() {
   }
 
   return (
-    <div className='w-100'>
+    <div className='w-100 h-100'>
       <div className="maps-module d-flex">
         <Pano initialData={firstPanoData} setData={setFirstData} />
         <Pano initialData={secondPanoData} setData={setSecondData} />
@@ -49,4 +48,4 @@ function App() {
   );
 }
 
-export default () => <GoogleMapsWrapper><App /></GoogleMapsWrapper>;
+export default () => <App />;
