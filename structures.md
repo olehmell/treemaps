@@ -1,5 +1,7 @@
 // Це псевдо JSON для пояснення структури коду і даних проєкту TREEMAP
+
 Im : {           // структура атрибутів окремого панорамного зображення
+
   properties: {  // блок, взятий з Mapillary API
     ca: Deg_Number,
     captured_at: Date_Str,
