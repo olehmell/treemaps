@@ -123,6 +123,10 @@ export function rad2deg(a) {
   return a*180/Math.PI;
 }
 
+export function mapillary2deg(a) {
+  return 180 * (a - 0.5)
+}
+
 function swap_views (in_dat) {
   return {
     latC_d:  in_dat.latB_d,

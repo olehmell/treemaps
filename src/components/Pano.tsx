@@ -7,7 +7,7 @@ import JsonLoadFileInput from './JsonLoadFileInput';
 import { ViewInputData } from './ViewIntupData'
 import 'mapillary-js/dist/mapillary.min.css';
 import { Viewer, TagComponent } from 'mapillary-js';
-import { deg2rad } from '../logic/calculator'
+import { deg2rad, mapillary2deg } from '../logic/calculator'
 
 type Props = {
   initialData?: InputPanoData,
@@ -124,8 +124,8 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) =
 
   const onChangePov = ({ pitch, heading }: Pov) => {
     const pov = {
-      pitch: deg2rad(360 * pitch),
-      heading: deg2rad(360 * heading)
+      pitch: deg2rad(mapillary2deg(pitch)),
+      heading: deg2rad(mapillary2deg(heading))
     }
     console.log('POV:', pov)
     setPov(pov)
