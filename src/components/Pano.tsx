@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, Button, FormControl, ToggleButtonGroup, ToggleButton, ButtonGroup } from 'react-bootstrap'
 import { InputPanoData, PanoType, Pov } from '../types';
 import { saveJson } from '../logic/saveJson';
@@ -96,7 +96,7 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) =
     });
 
     window.addEventListener("resize", function () { viewer.resize(); });
-  }, [false])
+  }, [uniqKey])
 
   const positionInputOnChange = (event: any) => {
     const value = event.target.value;
