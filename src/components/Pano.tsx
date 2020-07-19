@@ -1,33 +1,35 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Card, Button, FormControl, ToggleButtonGroup, ToggleButton, ButtonGroup } from 'react-bootstrap'
-import { InputPanoData, PanoType, Pov } from '../types';
+import { Image, PanoType, Pov, Properties } from '../types';
 import { saveJson } from '../logic/saveJson';
 import ReactJson from 'react-json-view'
 import JsonLoadFileInput from './JsonLoadFileInput';
-import { ViewInputData } from './ViewIntupData'
 import 'mapillary-js/dist/mapillary.min.css';
 import { Viewer, TagComponent } from 'mapillary-js';
-import { deg2rad, mapillary2deg } from '../logic/calculator'
+import { deg2rad } from '../logic/calculator'
 
 type Props = {
-  initialData?: InputPanoData,
-  setData: (data: InputPanoData) => void
+  initialData?: Image,
+  setData: (data: Image) => void
 }
 
-type Position = {
-  lat: number,
-  lon: number
-}
+const initImg = {
+  properties: { 'test': 'test' } as any,
+  geometry: {
+    coordinates: []
+  },
+  camH: '0',
+  trees: [ {} as any ]
+} as Image
 
-export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) => {
-  const [position, setPosition] = useState(initialData?.position);
-  const [pov, setPov] = useState(initialData?.pov);
-  const [typeInfo, setTypeInfo] = useState('text')
-  const [info, setInfo] = useState<PanoType>()
-
+export const Pano: React.FunctionComponent<Props> = ({ initialData: imageData = initImg, setData }) => {
   const [uniqKey] = useState(`mappilary-js-${new Date().getTime()}`)
   const [tagComponent, setTagComponent] = useState<any>();
   const [viewer, setViewer] = useState<any>()
+
+  const [ properties, setProperties ] = useState<Properties>()
+  const [ coordinates, setCoordinates ] = useState<number[]>()
+  const [ xAndY, setXAndY ] = useState<number[]>()
 
   const changeMode = useCallback(
     (tagMode: any) => {
@@ -54,13 +56,14 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) =
     setTagComponent(tagComponent)
     setViewer(viewer)
 
-    viewer.on(Viewer.nodechanged, (e: any) => { 
-      console.log('NodeChanged', e)
-      const { lat, lon } = e.computedLatLon
-      setPosition({ lat, lng: lon })
+    viewer.on(Viewer.nodechanged, (e: any) => {
+      console.log(e)
+      const { computedLatLon, ca, capturedAt, key, pano, sequenceKey, userKey } = e
+      const { lat, lon } = computedLatLon
+      setCoordinates([ lat, lon ])
+      setProperties({ ca, capturedAt, key, pano, sequenceKey, userKey })
     });
     // Create and add editable tags based on created geometry type
-    viewer.getPosition().then(({ lat, lon }: Position) => { setPosition({ lat, lng: lon }) });
     var createdIndex = 0;
     tagComponent.on(TagComponent.TagComponent.geometrycreated, function (geometry: any) {
       var id = "id-" + createdIndex++;
@@ -70,14 +73,14 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) =
       if (geometry instanceof TagComponent.RectGeometry) {
         tag = new TagComponent.OutlineTag(id, geometry, { editable: true, text: "rect" });
         const [ x0, y0, x1, y1 ] = geometry.rect
-        onChangePov({
-          pitch: x0 + x1/2,
-          heading: y0 + y1/2
-        })
+        setXAndY([
+          (x0 + x1)/2,
+          (y0 + y1)/2,
+        ])
       } else if (geometry instanceof TagComponent.PointGeometry) {
         tag = new TagComponent.SpotTag(id, geometry, { editable: true, text: "point" });
         const [ x0, y0 ] = geometry.point
-        onChangePov({ pitch: x0, heading: y0 })
+        setXAndY([ x0, y0 ])
       } else if (geometry instanceof TagComponent.PolygonGeometry) {
         tag = new TagComponent.OutlineTag(id, geometry, { editable: true, text: "polygon" });
       } else {
@@ -105,7 +108,7 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) =
       lat: parseFloat(lan),
       lng: parseFloat(lng)
     }
-    setPosition(pos)
+    setCoordinates([ pos.lat, pos.lng ])
     viewer.moveCloseTo(pos.lat, pos.lng)
   }
 
@@ -122,51 +125,24 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) =
     e.key === 'Enter' && keyInputOnChange(e)
   }
 
-  const onChangePov = ({ pitch, heading }: Pov) => {
-    const pov = {
-      pitch: deg2rad(mapillary2deg(pitch)),
-      heading: deg2rad(mapillary2deg(heading))
-    }
-    console.log('POV:', pov)
-    setPov(pov)
-  }
+  useEffect(() => {
+    if (!properties || !xAndY || !coordinates) return 
 
-  const generateInfo = useCallback(() => {
-    console.log(position, pov)
-    if (!position || !pov) return;
+    const [ x, y ] = xAndY
+    const az = deg2rad((0.5 - x)*180)
+    const pitch = deg2rad((y - 0.5)*360)
+    const { userKey, key, sequenceKey } = properties
 
     setData({
-      position: {
-        latAndLong: `${position.lat}, ${position.lng}`,
-        ...position
-      }, pov
+      properties: properties,
+      geometry: { coordinates },
+      trees: [ { az, pitch, isPlaneHoriz: false, imTrKey: `${key}_${userKey}_${sequenceKey}` } ],
+      camH: '0'
     })
+  }, [ properties, xAndY, coordinates ])
 
-    const id = new Date().toISOString()
-    return {
-      id,
-      inputData:
-      {
-        position,
-        pov
-      }
-    } as PanoType;
-  }, [position, pov, setData])
-
-  const typeInfoHandle = (event: any) => {
-    const value = event.target.value;
-    value && setTypeInfo(value)
-  }
-
-  useEffect(() => {
-    const info = generateInfo()
-    setInfo(info)
-  }, [generateInfo])
-
-  const onSelectInitialFile = (res: PanoType) => {
-    const { inputData: { position, pov } } = res
-    setPosition(position)
-    setPov(pov)
+  const onSelectInitialFile = (res: Image) => {
+    setData(res)
   }
 
   return (
@@ -199,17 +175,13 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) =
               onKeyDown={onEnterPosition}
               placeholder='00.12345, 00.12345'
             />
-            <ToggleButtonGroup className="ml-4 col-md-2 col-sm-12" type='radio' name='info-type' vertical onClick={typeInfoHandle} value={typeInfo}>
-              <ToggleButton variant='outline-warning' value='text'>Text</ToggleButton>
-              <ToggleButton variant='outline-warning' value='json'>Json</ToggleButton>
-            </ToggleButtonGroup>
-            <ButtonGroup vertical className='col-md-4 col-sm-12'>
+            <ButtonGroup>
               <JsonLoadFileInput onChange={onSelectInitialFile} />
-              <Button variant="light" onClick={() => saveJson(info, 'inputData')}>Save to JSON</Button>
+              <Button variant="light" onClick={() => saveJson(imageData, 'imageData')}>Save to JSON</Button>
             </ButtonGroup>
           </Card.Title>
           <Card.Footer>
-            {typeInfo === 'text' ? <ViewInputData inputData={info} /> : <ReactJson src={info} />}
+            <ReactJson src={imageData} />
           </Card.Footer>
         </Card.Body>
       </Card>

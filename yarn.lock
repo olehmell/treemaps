@@ -2869,7 +2869,7 @@ class-utils@^0.3.5:
     isobject "^3.0.0"
     static-extend "^0.1.1"
 
-classnames@^2.1.2, classnames@^2.2.6:
+classnames@^2.2.6:
   version "2.2.6"
   resolved "https://registry.yarnpkg.com/classnames/-/classnames-2.2.6.tgz#43935bffdd291f326dad0a205309b38d00f650ce"
   integrity sha512-JR/iSQOSt+LQIWwrwEzJ9uk0xfN3mTVYMwt1Ir5mUcSN6pU+V4zQFFaJsclJbPuAUQH+yfWef6tm7l1quW3C8Q==
@@ -5165,11 +5165,6 @@ hmac-drbg@^1.0.0:
     hash.js "^1.0.3"
     minimalistic-assert "^1.0.0"
     minimalistic-crypto-utils "^1.0.1"
-
-hoist-non-react-statics@^1.0.3:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/hoist-non-react-statics/-/hoist-non-react-statics-1.2.0.tgz#aa448cf0986d55cc40773b17174b7dd066cb7cfb"
-  integrity sha1-qkSM8JhtVcxAdzsXF0t90GbLfPs=
 
 hosted-git-info@^2.1.4:
   version "2.8.8"
@@ -8936,13 +8931,6 @@ react-app-polyfill@^1.0.4:
     regenerator-runtime "^0.13.3"
     whatwg-fetch "^3.0.0"
 
-react-async-loader@^0.1.2:
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/react-async-loader/-/react-async-loader-0.1.2.tgz#8c985381487fd1c126ec90b3a03c759f0c0b9480"
-  integrity sha1-jJhTgUh/0cEm7JCzoDx1nwwLlIA=
-  dependencies:
-    hoist-non-react-statics "^1.0.3"
-
 react-base16-styling@^0.6.0:
   version "0.6.0"
   resolved "https://registry.yarnpkg.com/react-base16-styling/-/react-base16-styling-0.6.0.tgz#ef2156d66cf4139695c8a167886cb69ea660792c"
@@ -9112,14 +9100,6 @@ react-scripts@3.2.0:
     workbox-webpack-plugin "4.3.1"
   optionalDependencies:
     fsevents "2.0.7"
-
-react-streetview@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/react-streetview/-/react-streetview-1.1.1.tgz#48040b4fd7fd5d25f1a312c7eeb62e3c582c9020"
-  integrity sha1-SAQLT9f9XSXxoxLH7rYuPFgskCA=
-  dependencies:
-    classnames "^2.1.2"
-    react-async-loader "^0.1.2"
 
 react-textarea-autosize@^6.1.0:
   version "6.1.0"
@@ -10731,10 +10711,10 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-typescript@~3.7.2:
-  version "3.7.5"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.7.5.tgz#0692e21f65fd4108b9330238aac11dd2e177a1ae"
-  integrity sha512-/P5lkRXkWHNAbcJIiHPfRoKqyd7bsyCma1hZNUGfn20qm64T6ZBlrzprymeu918H+mB/0rIg2gGK/BXkhhYgBw==
+typescript@^3.9.2:
+  version "3.9.6"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.9.6.tgz#8f3e0198a34c3ae17091b35571d3afd31999365a"
+  integrity sha512-Pspx3oKAPJtjNwE92YS05HQoY7z2SFyOpHo9MqJor3BXAGNaPUs83CuVp9VISFkSjyRfiTpmKuAYGJB7S7hOxw==
 
 ua-parser-js@^0.7.18:
   version "0.7.21"
