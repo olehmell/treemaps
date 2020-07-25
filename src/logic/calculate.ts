@@ -1,4 +1,4 @@
-import { Image, ResultData } from './../types';
+import { Image, ResultData, TreeSizes } from './../types';
 import { treemap_calculator } from './calculator';
 
 type Data = {
@@ -25,8 +25,8 @@ export const calculate = ({ firstImageData, secondImageData }: Data) => {
     const { geometry: {  coordinates: [ latC_d, longC_d ] }, trees: firstImTrees, properties: { key: im0Key } } = firstImageData
     const { geometry: {  coordinates: [ latB_d, longB_d ] }, trees: secondImTrees, properties: { key: im1Key } } = secondImageData
 
-    const treePairs = firstImTrees.map(( { az: azCA_d, imTrKey: im0TrKey }, i) => {
-      const { az: azBA_d, imTrKey: im1TrKey } = secondImTrees[i] || {} as any
+    const treePairs = firstImTrees.map(( { az: azCA_d, imTrKey: im0TrKey, sizes: firstSizes = {} as TreeSizes }, i) => {
+      const { az: azBA_d, imTrKey: im1TrKey, sizes: secondSizes = {} as TreeSizes } = secondImTrees[i] || {} as any
       const inputData: InputData = {
         latC_d,
         longC_d,
@@ -38,12 +38,19 @@ export const calculate = ({ firstImageData, secondImageData }: Data) => {
 
       const coord_2 = treemap_calculator(inputData)
 
+      const sizes: TreeSizes = {
+        width: (firstSizes.width - secondSizes.width)/2,
+        widthCr: (firstSizes.widthCr - secondSizes.widthCr)/2,
+        height: (firstSizes.height - secondSizes.height)/2
+      }
+
       // TODO calculate width and height
       return {
         im0TrKey,
         im1TrKey,
         trKey: `${im0TrKey}_${im1TrKey}_${new Date().getMilliseconds()}`,
-        coord_2
+        coord_2,
+        sizes
       }
     })
 

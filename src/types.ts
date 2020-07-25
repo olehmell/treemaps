@@ -53,13 +53,17 @@ export type TreeRt = {
   imTrKey: string,
 }
 
+export type TreeSizes = {
+  width: number,
+  height: number,
+  widthCr: number,
+}
+
 export type Tree = {
   az: number,
   pitch: number,
   imTrKey: string,
-  width?: number,
-  height?: number,
-  widthCr?: number,
+  sizes?: TreeSizes,
   isPlaneHoriz: boolean,
   coord_1?: {
     latA_r: number,
@@ -82,6 +86,7 @@ export type TreePair = {
   im0TrKey: string,
   im1TrKey: string,
   trKey: string,
+  sizes?: TreeSizes,
   coord_2: CoordTwo
 }
 

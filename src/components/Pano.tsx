@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Card, Button, FormControl, ButtonGroup } from 'react-bootstrap'
-import { Image, Properties, TreeRt, Tree } from '../types';
+import { Image, Properties, TreeRt, Tree, TreeSizes } from '../types';
 import { saveJson } from '../logic/saveJson';
 import ReactJson from 'react-json-view'
 import JsonLoadFileInput from './JsonLoadFileInput';
@@ -50,7 +50,7 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, se
 
   const [ calculateCr, setCalculateCr ] = useState(false)
 
-  const [ trees ] = useState<TreeRt[]>([])
+  const [ trees, setTrees ] = useState<TreeRt[]>([])
 
   const {
     isTwoWindowsType
@@ -100,18 +100,30 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, se
 
         const coord = geometry.rect;
         const lastTree = trees.pop()
-        const isRtCr = !lastTree || lastTree.RtCr
+        console.log(lastTree)
 
-        if (isRtCr || !lastTree) {
+        if (!lastTree) {
           trees.push({
             imTrKey,
             RtM: coord
           })
         } else {
-          lastTree.RtCr = coord
+          const isRtCr = lastTree.RtCr
+          console.log(isRtCr)
+          if (isRtCr) {
+            trees.push(...[ lastTree, {
+              imTrKey,
+              RtM: coord
+            } ])
+          } else {
+            lastTree.RtCr = coord
+            trees.push(lastTree)
+          }
         }
+        
+        console.log(trees)
 
-        setCalculateCr(!isRtCr)
+        setTrees([ ...trees ])
 
       } else if (geometry instanceof TagComponent.PointGeometry) {
         tag = new TagComponent.SpotTag(id, geometry, { editable: true, text: "point" });
@@ -135,7 +147,7 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, se
     });
 
     window.addEventListener("resize", function () { viewer.resize(); });
-  }, [uniqKey, isTwoWindowsType, trees, imTrKey])
+  }, [ uniqKey, isTwoWindowsType ])
 
   const positionInputOnChange = (event: any) => {
     const value = event.target.value;
@@ -164,16 +176,24 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, se
   useEffect(() => {
     if (!properties || !coordinates) return 
 
-    const treesData: Tree[] = trees.map(({ RtM }) => {
+    const treesData: Tree[] = trees.map(({ RtM, RtCr }) => {
       const [ x0, y0, x1, y1 ] = RtM
+      const [ crX0, crX1, crY0 ] = RtCr || []
       const x = (x0 + x1)/2
       const y = (y0 + y1)/2
       const az = deg2rad((0.5 - x)*180) + camH
       const pitch = deg2rad((y - 0.5)*360)
       const dist = camH * ctg(pitch);
       const coordResult = isTwoWindowsType ? { isPlaneHoriz: false, imTrKey } : calculateCoord1(coordinates, dist, az)
-      // TODO calulate width and height
-      return { az, pitch, ...coordResult } as any
+      // Tr_W = 2*Math.Pi*dist*abs(Tr_Unbound.Rt.Rt0.x0 - Tr_Unbound.Rt.Rt0.x1);
+      const sizes: TreeSizes = {
+        width: 2*Math.PI*dist*Math.abs(x0 - x1),
+        height: dist*(Math.tan(crY0) - Math.tan(y1)),
+        widthCr: 2*Math.PI*dist*Math.abs(crX0 - crX1)
+      }
+      // Tr_Cr = 2*Math.Pi*dist*abs(Tr_Unbound.Rt.Rt1.x0 - Tr_Unbound.Rt.Rt1.x1);
+      // Tr_H = dist*(tg(Tr_Unbound.Rt.Rt1.y0) - tg(Tr_Unbound.Rt.Rt0.y1));
+      return { az, pitch, ...coordResult, sizes } as any
     })
 
     setData({
@@ -192,17 +212,20 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, se
     <div className='pano'>
       <div className='map-container'>
         <div id={uniqKey} style={{ height: '100%' }}></div>
-        <div className="button-container">
-          <button onClick={() => changeMode(TagComponent.TagMode.CreatePoint)}>Відмітити дерево точкою</button>
-          <button onClick={() => changeMode(TagComponent.TagMode.CreateRect)} disabled={calculateCr}>Позначити стовбур</button>
-          <button onClick={() => changeMode(TagComponent.TagMode.CreateRect)} disabled={!calculateCr}>Позначити крону</button>
-          <input
-            onBlur={keyInputOnChange}
-            onDragEnter={keyInputOnChange}
-            onKeyDown={onEnterKey}
-            placeholder='Enter key'
-          />
-        </div>
+        <ButtonGroup className='nav-button-container'>
+          {/* <Button variant='outline-secondary' onClick={() => changeMode(TagComponent.TagMode.CreatePoint)}>Точка</Button> */}
+          <Button  variant="light" onClick={() => { 
+            changeMode(TagComponent.TagMode.CreateRect)
+            setCalculateCr(true)
+          }} disabled={calculateCr}>Позначити стовбур</Button>
+          <Button  variant="light" onClick={() => { 
+            changeMode(TagComponent.TagMode.CreateRect)
+            setCalculateCr(false)
+          }} disabled={!calculateCr}>Позначити крону</Button>
+          <Button  variant="light" onClick={() => changeMode(TagComponent.TagMode.Default)}>Відмітити</Button>
+          <JsonLoadFileInput onChange={onSelectInitialFile} />
+          <Button variant="light" onClick={() => saveJson(initialData, 'imageData')}>Зберегти JSON</Button>
+        </ButtonGroup>
       </div>
       <Card>
         <Card.Body>
@@ -214,10 +237,13 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, se
               onKeyDown={onEnterPosition}
               placeholder='00.12345, 00.12345'
             />
-            <ButtonGroup>
-              <JsonLoadFileInput onChange={onSelectInitialFile} />
-              <Button variant="light" onClick={() => saveJson(initialData, 'imageData')}>Save to JSON</Button>
-            </ButtonGroup>
+            <FormControl
+              className='col-md-4 col-sm-12'
+              onBlur={keyInputOnChange}
+              onDragEnter={keyInputOnChange}
+              onKeyDown={onEnterKey}
+              placeholder='Enter key'
+            />
           </Card.Title>
           <Card.Footer>
             <ReactJson src={initialData} />
