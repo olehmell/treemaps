@@ -172,6 +172,7 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, se
       const pitch = deg2rad((y - 0.5)*360)
       const dist = camH * ctg(pitch);
       const coordResult = isTwoWindowsType ? { isPlaneHoriz: false, imTrKey } : calculateCoord1(coordinates, dist, az)
+      // TODO calulate width and height
       return { az, pitch, ...coordResult } as any
     })
 
