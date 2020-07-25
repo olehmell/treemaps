@@ -16,3 +16,12 @@ $body-bg: #fff;
   height: 23vh;
   overflow: auto;
 }
+
+.switch { 
+  width: 100%;
+}
+
+.pano { 
+  width: fit-content;
+  width: -webkit-fill-available;
+}

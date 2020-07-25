@@ -1,4 +1,4 @@
-import { InitialData, Image, ResultData } from './../types';
+import { Image, ResultData } from './../types';
 import { treemap_calculator } from './calculator';
 
 type Data = {
@@ -41,7 +41,7 @@ export const calculate = ({ firstImageData, secondImageData }: Data) => {
         im0Key,
         im1Key,
         treePairs: [
-          { 
+          {
             im0TrKey,
             im1TrKey,
             trKey: `${im0TrKey}_${im1TrKey}_${new Date().getMilliseconds()}`,
@@ -49,7 +49,7 @@ export const calculate = ({ firstImageData, secondImageData }: Data) => {
           }
         ]
       },
-      imgs: [ firstImageData, secondImageData ]
+      imgs: [firstImageData, secondImageData]
     } as ResultData
   } catch (err) {
     console.log(err.message)

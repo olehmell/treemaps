@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Card, Button, FormControl, ToggleButtonGroup, ToggleButton, ButtonGroup } from 'react-bootstrap'
-import { Image, PanoType, Pov, Properties } from '../types';
+import { Card, Button, FormControl, ButtonGroup } from 'react-bootstrap'
+import { Image, Properties, TreeRt, Tree } from '../types';
 import { saveJson } from '../logic/saveJson';
 import ReactJson from 'react-json-view'
 import JsonLoadFileInput from './JsonLoadFileInput';
 import 'mapillary-js/dist/mapillary.min.css';
 import { Viewer, TagComponent } from 'mapillary-js';
-import { deg2rad } from '../logic/calculator'
+import { deg2rad, ctg, reckon, rad2deg } from '../logic/calculator'
+import { useMerasurementTypeContext } from './TypeContext';
 
 type Props = {
   initialData?: Image,
@@ -18,18 +19,42 @@ const initImg = {
   geometry: {
     coordinates: []
   },
-  camH: '0',
+  camH: 2,
   trees: [ {} as any ]
 } as Image
 
-export const Pano: React.FunctionComponent<Props> = ({ initialData: imageData = initImg, setData }) => {
+
+export const calculateCoord1 = ([ lat, lon ]: number[], dist: number, az: number) => {
+  const { latA_r, longA_r } = reckon(lat, lon, dist, az);
+  return {
+    is_Plane_Horiz: true,
+    coord_1: {
+      latA_r,
+      longA_r,
+      latA_d: rad2deg(latA_r),
+      longA_d: rad2deg(longA_r)
+    }
+  }
+}
+
+export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, setData }) => {
   const [uniqKey] = useState(`mappilary-js-${new Date().getTime()}`)
   const [tagComponent, setTagComponent] = useState<any>();
   const [viewer, setViewer] = useState<any>()
-
+  const [ camH ] = useState(initialData.camH)
   const [ properties, setProperties ] = useState<Properties>()
   const [ coordinates, setCoordinates ] = useState<number[]>()
-  const [ xAndY, setXAndY ] = useState<number[]>()
+
+  const { userKey, key, sequenceKey } = properties || {} as any
+  const imTrKey = `${key}_${userKey}_${sequenceKey}`
+
+  const [ calculateCr, setCalculateCr ] = useState(false)
+
+  const [ trees ] = useState<TreeRt[]>([])
+
+  const {
+    isTwoWindowsType
+  } = useMerasurementTypeContext();
 
   const changeMode = useCallback(
     (tagMode: any) => {
@@ -72,15 +97,26 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData: imageData = 
       console.log(geometry)
       if (geometry instanceof TagComponent.RectGeometry) {
         tag = new TagComponent.OutlineTag(id, geometry, { editable: true, text: "rect" });
-        const [ x0, y0, x1, y1 ] = geometry.rect
-        setXAndY([
-          (x0 + x1)/2,
-          (y0 + y1)/2,
-        ])
+
+        const coord = geometry.rect;
+        const lastTree = trees.pop()
+        const isRtCr = !lastTree || lastTree.RtCr
+
+        if (isRtCr || !lastTree) {
+          trees.push({
+            imTrKey,
+            RtM: coord
+          })
+        } else {
+          lastTree.RtCr = coord
+        }
+
+        setCalculateCr(!isRtCr)
+
       } else if (geometry instanceof TagComponent.PointGeometry) {
         tag = new TagComponent.SpotTag(id, geometry, { editable: true, text: "point" });
-        const [ x0, y0 ] = geometry.point
-        setXAndY([ x0, y0 ])
+        // const [ x0, y0 ] = geometry.point
+        // setXAndY([ x0, y0 ])
       } else if (geometry instanceof TagComponent.PolygonGeometry) {
         tag = new TagComponent.OutlineTag(id, geometry, { editable: true, text: "polygon" });
       } else {
@@ -99,7 +135,7 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData: imageData = 
     });
 
     window.addEventListener("resize", function () { viewer.resize(); });
-  }, [uniqKey])
+  }, [uniqKey, isTwoWindowsType, trees, imTrKey])
 
   const positionInputOnChange = (event: any) => {
     const value = event.target.value;
@@ -126,37 +162,39 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData: imageData = 
   }
 
   useEffect(() => {
-    if (!properties || !xAndY || !coordinates) return 
+    if (!properties || !coordinates) return 
 
-    const [ x, y ] = xAndY
-    const az = deg2rad((0.5 - x)*180)
-    const pitch = deg2rad((y - 0.5)*360)
-    const { userKey, key, sequenceKey } = properties
+    const treesData: Tree[] = trees.map(({ RtM }) => {
+      const [ x0, y0, x1, y1 ] = RtM
+      const x = (x0 + x1)/2
+      const y = (y0 + y1)/2
+      const az = deg2rad((0.5 - x)*180) + camH
+      const pitch = deg2rad((y - 0.5)*360)
+      const dist = camH * ctg(pitch);
+      const coordResult = isTwoWindowsType ? { isPlaneHoriz: false, imTrKey } : calculateCoord1(coordinates, dist, az)
+      return { az, pitch, ...coordResult } as any
+    })
 
     setData({
       properties: properties,
       geometry: { coordinates },
-      trees: [ { az, pitch, isPlaneHoriz: false, imTrKey: `${key}_${userKey}_${sequenceKey}` } ],
-      camH: '0'
+      trees: treesData,
+      camH
     })
-  }, [ properties, xAndY, coordinates ])
+  }, [properties, coordinates, setData, initialData.camH, camH, isTwoWindowsType, imTrKey, trees])
 
   const onSelectInitialFile = (res: Image) => {
     setData(res)
   }
 
   return (
-    <div
-      style={{
-        width: '50%'
-      }}>
+    <div className='pano'>
       <div className='map-container'>
         <div id={uniqKey} style={{ height: '100%' }}></div>
         <div className="button-container">
-          <button onClick={() => changeMode(TagComponent.TagMode.CreatePoint)}>Create point</button>
-          <button onClick={() => changeMode(TagComponent.TagMode.CreateRect)}>Create rectangle</button>
-          <button onClick={() => changeMode(TagComponent.TagMode.CreateRectDrag)}>Create rectangle drag</button>
-          <button onClick={() => changeMode(TagComponent.TagMode.Default)}>Stop creating</button>
+          <button onClick={() => changeMode(TagComponent.TagMode.CreatePoint)}>Відмітити дерево точкою</button>
+          <button onClick={() => changeMode(TagComponent.TagMode.CreateRect)} disabled={calculateCr}>Позначити стовбур</button>
+          <button onClick={() => changeMode(TagComponent.TagMode.CreateRect)} disabled={!calculateCr}>Позначити крону</button>
           <input
             onBlur={keyInputOnChange}
             onDragEnter={keyInputOnChange}
@@ -177,11 +215,11 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData: imageData = 
             />
             <ButtonGroup>
               <JsonLoadFileInput onChange={onSelectInitialFile} />
-              <Button variant="light" onClick={() => saveJson(imageData, 'imageData')}>Save to JSON</Button>
+              <Button variant="light" onClick={() => saveJson(initialData, 'imageData')}>Save to JSON</Button>
             </ButtonGroup>
           </Card.Title>
           <Card.Footer>
-            <ReactJson src={imageData} />
+            <ReactJson src={initialData} />
           </Card.Footer>
         </Card.Body>
       </Card>

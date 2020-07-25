@@ -29,8 +29,8 @@ export type PanoType = {
 }
 
 export type CoordTwo = {
-  lat_A_d: number,
-  long_A_d: number,
+  latA_d: number,
+  longA_d: number,
   a_r: number,
   b_r: number,
   c_r: number
@@ -47,10 +47,19 @@ export type InitialData = {
   outputData?: CoordTwo
 }
 
+export type TreeRt = {
+  RtM: number[],
+  RtCr?: number[],
+  imTrKey: string,
+}
+
 export type Tree = {
   az: number,
   pitch: number,
   imTrKey: string,
+  width?: number,
+  height?: number,
+  widthCr?: number,
   isPlaneHoriz: boolean,
   coord_1?: {
     latA_r: number,
@@ -65,7 +74,7 @@ export type Image = {
   geometry: {
     coordinates: number[]
   },
-  camH: string,
+  camH: number,
   trees: Tree[]
 }
 
