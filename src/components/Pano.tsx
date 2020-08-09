@@ -39,11 +39,12 @@ export const calculateCoord1 = ([ lat, lon ]: number[], dist: number, az: number
 
 export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, setData }) => {
   const [uniqKey] = useState(`mappilary-js-${new Date().getTime()}`)
+  const [ viewKey, setViewKey ] = useState<string>()
   const [tagComponent, setTagComponent] = useState<any>();
   const [viewer, setViewer] = useState<any>()
   const [ camH ] = useState(initialData.camH)
-  const [ properties, setProperties ] = useState<Properties>()
-  const [ coordinates, setCoordinates ] = useState<number[]>()
+  const [ properties, setProperties ] = useState<Properties>(initialData.properties)
+  const [ coordinates, setCoordinates ] = useState<number[]>(initialData.geometry.coordinates)
 
   const { userKey, key, sequenceKey } = properties || {} as any
   const imTrKey = `${key}_${userKey}_${sequenceKey}`
@@ -68,7 +69,7 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, se
     const viewer = new Viewer(
       uniqKey,
       "QjI1NnU0aG5FZFZISE56U3R5aWN4Zzo3NTM1MjI5MmRjODZlMzc0",
-      "ImB-gdHNAI1sgU9lwf1UCg",
+      key || 'hxMfoRUF9RkUYV2Y2VWM9k',
       {
         component: {
           cover: false,
@@ -82,9 +83,9 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, se
     setViewer(viewer)
 
     viewer.on(Viewer.nodechanged, (e: any) => {
-      console.log(e)
-      const { computedLatLon, ca, capturedAt, key, pano, sequenceKey, userKey } = e
-      const { lat, lon } = computedLatLon
+      console.log('nodechanged', e)
+      const { computedLatLon, originalLatLon, ca, capturedAt, key, pano, sequenceKey, userKey } = e
+      const { lat, lon } = computedLatLon || originalLatLon
       setCoordinates([ lat, lon ])
       setProperties({ ca, capturedAt, key, pano, sequenceKey, userKey })
     });
