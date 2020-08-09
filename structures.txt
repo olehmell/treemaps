@@ -1,0 +1,106 @@
+// Це псевдо JSON для пояснення структури коду і даних проєкту TREEMAP
+Im : {           // структура атрибутів окремого панорамного зображення
+  properties: {  // блок, взятий з Mapillary API, але не повністю
+    ca: Deg_Number,
+    captured_at: Date_Str,
+    key: Im_Hashtag,
+    pano: true,
+    sequence_key: Seq_Hashtag,
+    user_key: User_Hashtag
+  },
+  geometry: {    // блок, взятий з Mapillary API, але не повністю
+    coordinates: [ // в градусах
+      Lat, Long
+    ]
+  },
+  // наші дані
+  Cam_H, // висота камери над рівнем поверхні зйомки
+  Tr: [ // масив дерев (променів спостереження), помічених і прив'язаних до цього зображення Im
+    {
+      az,         // азимут спостереження центра дерева (по нижній частині), град
+      pitch,      // верт кут спостереження нижньої дерева, град
+      Im_Tr_Key,  // індекс дерева у цьому зображенні
+      is_Plane_Horiz: true, // чи поверхня землі горизонтальна
+      coord_1: {  // координати, розраховані з 1 зображення, if is_Plane_Horiz == true [Однокадрове визначення координат](https://bit.ly/38cvfk1)
+        latA_r, longA_r, latA_d, longA_d 
+      }
+    },
+    {
+      ...
+    }
+  ]
+}
+
+
+//// Розрахунок кутів піксела з виміряних координат у Viewer
+// Im.Tr.az = (x - 0.5)*360 + Im.properties.ca;
+// Im.Tr.pitch = (0.5 - y)*180;
+// dist = Cam_H*ctg(Im.Tr.pitch);
+// Im.Tr.coord_1 = reckon(Im.geometry.coordinates[0], Im.geometry.coordinates[1], dist, Im.Tr.az); // coord_1 тут в радіанах
+// Im.Tr.coord_1.latA_d = Im.Tr.coord_1.latA_r*180/Math.Pi;
+// Im.Tr.coord_1.longA_d = Im.Tr.coord_1.longA_r*180/Math.Pi;
+
+
+Im_Pair: {  // структура для двокадрового вимірювання координат
+  Im0_Key, Im1_Key, // індекси двох зображень, взяті з Im.properties.key
+  Tr_Pair [       // масив всіх дерев, визначених перетином пари променів для пари зображень
+    {
+      Im0_Tr_Key, // індекс дерева із зображення Im0, може зустрічатись не більше 1 разу у масиві Tr_Pair, взято з Im.Tr.Im_Tr_Key
+      Im1_Tr_Key, // індекс дерева із зображення Im1, може зустрічатись не більше 1 разу у масиві Tr_Pair, взято з Im.Tr.Im_Tr_Key
+      Tr_Key,     // після визначення дерева на перетині променів, йому призначається індекс, не прив'язаний до одного зображення
+      coord_2     // координати дерева, розраховані двокадровим методом (treemap_calculator)
+    },
+    { Im0_Tr_Key, Im1_Tr_Key, Tr_Key, coord_2 },
+    { ... }
+  ]
+}
+
+
+//// Це умовна схема двокадрового розрахунку
+// Im.properties.key[Im_pair.Im0_Key] -> Img0;
+// Im.properties.key[Im_pair.Im1_Key] -> Img1;
+// in_dat = {
+//   latC_d:  Img0.geometry.coordinates[0],
+//   longC_d: Img0.geometry.coordinates[1],
+//   azCA_d:  Img0.Tr.Im_Tr_Key[Im_Pair.Tr_Pair.Im0_Tr_Key],
+//   latB_d:  Img1.geometry.coordinates[0],
+//   longB_d: Img1.geometry.coordinates[1],
+//   azBA_d:  Img1.Tr.Im_Tr_Key[Im_Pair.Tr_Pair.Im1_Tr_Key]
+// };
+// out_dat = treemap_calculator(in_dat);
+// out_dat = { // це визначення структури, що повертає treemap_calculator
+//     latA_d:  latA_d, 
+//     longA_d: longA_d, 
+//     a_r:      a_r, 
+//     b_r:      b_r, 
+//     c_r:      c_r
+//   };
+
+
+Tr_Unbound: {  // структура атрибутів дерева, не прив'язаного до зображень
+  Tr_Key,      // індекс дерева, взятий з Im_Pair.Tr_Pair.Tr_key, цей індекс буде зустрічатися у 2 і більше зображень
+  Im_Tr_Key_Arr: [ // масив індексів одного дерева, під яким воно зустрічається у розрахунках двокадровим методом у декількох парах зображень (treemap_calculator)
+    Im0_Tr_Key, Im1_Tr_Key, Im2_Tr_Key, ...
+    ...
+  ],
+  Rt: {   // пара прямокутників для обміру інших параметрів дерева, промір відбувається на одному зображені, де є це дерево 
+    Rt0: [x0, y0, x1, y1],   // прямокутник для вимірювання ширини стовбура Tr_W
+    Rt1: [x0, y0, x1, y1],   // прямокутник для обміру крони дерева
+    Im_Tr_Key                // індекс дерева, в якому були проведені обміри, взято з Im.Tr.Im_Tr_Key
+  },
+  Tr_W,                      // ширина стовбура - [Визначення ширини стовбура](https://bit.ly/3e1mIli)
+  Tr_H,                      // висота дерева - [Визначення висоти дерева](https://bit.ly/2AB4auG)
+  Tr_Cr,                     // ширина крони
+  Tr_Coord_2: [ Lat, Long ], // середнє значення координат дерева, рораховане з усіх сполучень пар N променів - C(2,N) методом treemap_calculator
+  Tr_Coord_2_Err,            // середнє квадратичне відхилення окремих перетинів пар променів від середнього значення координат дерева Tr_Coord_2
+  Tr_Coord_1: [ Lat, Long ], // середнє значення координат дерева, рораховане однокадровим методом для всіх індексів Tr_Unbound.Im_Tr_Key_Arr, 
+                             // результат по кожному індексу можна розмістити у Im.Tr[Im_Tr_Key].coord_1
+  Tr_Coord_1_Err             // середнє квадратичне відхилення координат, розрахованих однокадровим методом, для кожного індексу від середнього 
+                             // значення координат дерева Tr_Coord_1
+}
+
+//// Формули розрахунку інших параметрів дерева
+//// dist - метрична відстань від центру панорами до дерева, обрахована з допомогою одно- або двокадрового методу
+// Tr_W = 2*Math.Pi*dist*abs(Tr_Unbound.Rt.Rt0.x0 - Tr_Unbound.Rt.Rt0.x1);
+// Tr_Cr = 2*Math.Pi*dist*abs(Tr_Unbound.Rt.Rt1.x0 - Tr_Unbound.Rt.Rt1.x1);
+// Tr_H = dist*(tg(Tr_Unbound.Rt.Rt1.y0) - tg(Tr_Unbound.Rt.Rt0.y1));

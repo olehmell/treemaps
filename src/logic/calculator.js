@@ -18,6 +18,7 @@
 //    deg2rad(a)
 //    rad2deg(a)
 //    swap_views(in_dat)
+//    reckon(latC_r, longC_r, b_r, azCA_r)
 
 //  TEST INPUT DATA
 let in_dat = {
@@ -31,8 +32,8 @@ let in_dat = {
   
 //  REFERENT OCTAVE OUTPUT RESULT
 let out_dat_octav = {
-  lat_A_d:  5.045563536761307e+01,
-  long_A_d: 3.052182821294145e+01,
+  latA_d:   5.045563536761307e+01,
+  longA_d:  3.052182821294145e+01,
   a_r:      9.971849945481075e-06,
   b_r:      1.117360728745645e-05,
   c_r:      6.869168970035038e-06
@@ -66,6 +67,7 @@ console.log(`Sides of triangle, m: 'a_m' = ${a_m}, 'b_m' = ${b_m}, 'c_m' = ${c_m
 //    deg2rad(a)
 //    rad2deg(a)
 //    swap_views(in_dat)
+//    reckon(latC_r, longC_r, b_r, azCA_r)
 
 export function treemap_calculator(in_dat) {
   let latC_d = in_dat.latC_d, longC_d = in_dat.longC_d, azCA_d = in_dat.azCA_d, 
@@ -89,21 +91,15 @@ export function treemap_calculator(in_dat) {
   let c_r = Math.asin(Math.sin(a_r)/Math.sin(A_r)*Math.sin(C_r));
 
   let azCA_r = deg2rad(azCA_d);
-  let lat_A_r = Math.PI/2 - Math.acos(Math.sin(latC_r)*Math.cos(b_r) + Math.cos(latC_r)*Math.sin(b_r)*Math.cos(azCA_r));
 
-  let cos_gamma = (Math.cos(b_r) - Math.sin(lat_A_r)*Math.sin(latC_r))/(Math.cos(lat_A_r)*Math.cos(latC_r));
-  let sin_gamma = Math.sin(azCA_r)*Math.sin(b_r)/Math.cos(lat_A_r);
-  let gamma = Math.atan2(sin_gamma, cos_gamma);
-
-  let long_A_r = longC_r + gamma;
-  long_A_r = long_A_r + Math.PI % (2*Math.PI) - Math.PI;
-
-  let lat_A_d = rad2deg(lat_A_r);
-  let long_A_d = rad2deg(long_A_r);
+  let coordA = reckon(latC_r, longC_r, b_r, azCA_r);
+  
+  let latA_d = rad2deg(coordA.latA_r);
+  let longA_d = rad2deg(coordA.longA_r);
 
   let out_dat = {
-    lat_A_d:  lat_A_d, 
-    long_A_d: long_A_d, 
+    latA_d:  latA_d, 
+    longA_d: longA_d, 
     a_r:      a_r, 
     b_r:      b_r, 
     c_r:      c_r
@@ -115,15 +111,15 @@ export function treemap_calculator(in_dat) {
   return out_dat;
 }
 
-function deg2rad(a) {
+export function deg2rad(a) {
   return a/180*Math.PI;
 }
 
-function rad2deg(a) {
+export function rad2deg(a) {
   return a*180/Math.PI;
 }
 
-function swap_views (in_dat) {
+function swap_views(in_dat) {
   return {
     latC_d:  in_dat.latB_d,
     longC_d: in_dat.longB_d,
@@ -131,6 +127,24 @@ function swap_views (in_dat) {
     latB_d:  in_dat.latC_d,
     longB_d: in_dat.longC_d,
     azBA_d:  in_dat.azCA_d
-};
+  };
+}
+
+export function reckon(latC_r, longC_r, b_r, azCA_r) {
+  let latA_r = Math.PI/2 - Math.acos(Math.sin(latC_r)*Math.cos(b_r) + Math.cos(latC_r)*Math.sin(b_r)*Math.cos(azCA_r));
+
+  let cos_gamma = (Math.cos(b_r) - Math.sin(latA_r)*Math.sin(latC_r))/(Math.cos(latA_r)*Math.cos(latC_r));
+  let sin_gamma = Math.sin(azCA_r)*Math.sin(b_r)/Math.cos(latA_r);
+  let gamma = Math.atan2(sin_gamma, cos_gamma);
+
+  let longA_r = longC_r + gamma;
+  longA_r = longA_r + Math.PI % (2*Math.PI) - Math.PI;
+
+  return {
+    latA_r:  latA_r, 
+    longA_r: longA_r
+  };
 
 }
+
+export function ctg(x) { return 1 / Math.tan(x); }

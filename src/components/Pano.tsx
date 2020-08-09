@@ -1,148 +1,256 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import ReactStreetview from 'react-google-streetview';
-import { apiKey } from '../config';
-import { Card, Button, FormControl, ToggleButtonGroup, ToggleButton, ButtonGroup } from 'react-bootstrap'
-import { useGoogleMaps } from './GoogleMapsContext';
-import { InputPanoData, PanoType } from '../types';
+import React, { useState, useEffect, useCallback } from 'react'
+import { Card, Button, FormControl, ButtonGroup } from 'react-bootstrap'
+import { Image, Properties, TreeRt, Tree, TreeSizes } from '../types';
 import { saveJson } from '../logic/saveJson';
 import ReactJson from 'react-json-view'
 import JsonLoadFileInput from './JsonLoadFileInput';
-import { ViewInputData } from './ViewIntupData' 
-import { NavigationMap } from './NavMap';
+import 'mapillary-js/dist/mapillary.min.css';
+import { Viewer, TagComponent } from 'mapillary-js';
+import { deg2rad, ctg, reckon, rad2deg } from '../logic/calculator'
+import { useMerasurementTypeContext } from './TypeContext';
 
 type Props = {
-  initialData?: InputPanoData,
-  setData: (data: InputPanoData) => void
+  initialData?: Image,
+  setData: (data: Image) => void
 }
 
-export const Pano: React.FunctionComponent<Props> = ({ initialData, setData }) => {
-    const [ position, setPosition ] = useState(initialData?.position);
-    const [ pov, setPov ] = useState(initialData?.pov);
-    const [ elevationData, setElevationData ] = useState(initialData?.elevation)
-    const [ getPosition, setGetPosition ] = useState();
-    const [ typeInfo, setTypeInfo ] = useState('text')
-    const [ info, setInfo ] = useState<PanoType>()
-    const { state: { elevation } } = useGoogleMaps()
+const initImg = {
+  properties: { 'test': 'test' } as any,
+  geometry: {
+    coordinates: []
+  },
+  camH: 2,
+  trees: [ {} as any ]
+} as Image
 
-    const onChangePosition = (event: any) => {
-      setGetPosition(event)
-      setPosition({
-        lat: event.lat(),
-        lng: event.lng()
-      })
+
+export const calculateCoord1 = ([ lat, lon ]: number[], dist: number, az: number) => {
+  const { latA_r, longA_r } = reckon(lat, lon, dist, az);
+  return {
+    is_Plane_Horiz: true,
+    coord_1: {
+      latA_r,
+      longA_r,
+      latA_d: rad2deg(latA_r),
+      longA_d: rad2deg(longA_r)
     }
+  }
+}
 
-    const onChangePov = (event: any) => {
-      setPov({
-        pitch: event.pitch,
-        heading: event.heading
-      })
-    }
+export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, setData }) => {
+  const [uniqKey] = useState(`mappilary-js-${new Date().getTime()}`)
+  const [ viewKey, setViewKey ] = useState<string>()
+  const [tagComponent, setTagComponent] = useState<any>();
+  const [viewer, setViewer] = useState<any>()
+  const [ camH ] = useState(initialData.camH)
+  const [ properties, setProperties ] = useState<Properties>(initialData.properties)
+  const [ coordinates, setCoordinates ] = useState<number[]>(initialData.geometry.coordinates)
 
-    const positionInputOnChange = (event: any) => {
-      const value = event.target.value;
-      const [ lan, lng ] = value.split(',');
-      const position = {
-        lat: parseFloat(lan),
-        lng: parseFloat(lng)
+  const { userKey, key, sequenceKey } = properties || {} as any
+  const imTrKey = `${key}_${userKey}_${sequenceKey}`
+
+  const [ calculateCr, setCalculateCr ] = useState(false)
+
+  const [ trees, setTrees ] = useState<TreeRt[]>([])
+
+  const {
+    isTwoWindowsType
+  } = useMerasurementTypeContext();
+
+  const changeMode = useCallback(
+    (tagMode: any) => {
+      tagComponent.changeMode(tagMode);
+    },
+    [tagComponent]
+  )
+
+  useEffect(() => {
+    // Retrieve tag component
+    const viewer = new Viewer(
+      uniqKey,
+      "QjI1NnU0aG5FZFZISE56U3R5aWN4Zzo3NTM1MjI5MmRjODZlMzc0",
+      key || 'hxMfoRUF9RkUYV2Y2VWM9k',
+      {
+        component: {
+          cover: false,
+          tag: true,
+        },
       }
-      setPosition(position)
+    )
+
+    const tagComponent = viewer.getComponent("tag");
+    setTagComponent(tagComponent)
+    setViewer(viewer)
+
+    viewer.on(Viewer.nodechanged, (e: any) => {
+      console.log('nodechanged', e)
+      const { computedLatLon, originalLatLon, ca, capturedAt, key, pano, sequenceKey, userKey } = e
+      const { lat, lon } = computedLatLon || originalLatLon
+      setCoordinates([ lat, lon ])
+      setProperties({ ca, capturedAt, key, pano, sequenceKey, userKey })
+    });
+    // Create and add editable tags based on created geometry type
+    var createdIndex = 0;
+    tagComponent.on(TagComponent.TagComponent.geometrycreated, function (geometry: any) {
+      var id = "id-" + createdIndex++;
+
+      var tag;
+      console.log(geometry)
+      if (geometry instanceof TagComponent.RectGeometry) {
+        tag = new TagComponent.OutlineTag(id, geometry, { editable: true, text: "rect" });
+
+        const coord = geometry.rect;
+        const lastTree = trees.pop()
+        console.log(lastTree)
+
+        if (!lastTree) {
+          trees.push({
+            imTrKey,
+            RtM: coord
+          })
+        } else {
+          const isRtCr = lastTree.RtCr
+          console.log(isRtCr)
+          if (isRtCr) {
+            trees.push(...[ lastTree, {
+              imTrKey,
+              RtM: coord
+            } ])
+          } else {
+            lastTree.RtCr = coord
+            trees.push(lastTree)
+          }
+        }
+        
+        console.log(trees)
+
+        setTrees([ ...trees ])
+
+      } else if (geometry instanceof TagComponent.PointGeometry) {
+        tag = new TagComponent.SpotTag(id, geometry, { editable: true, text: "point" });
+        // const [ x0, y0 ] = geometry.point
+        // setXAndY([ x0, y0 ])
+      } else if (geometry instanceof TagComponent.PolygonGeometry) {
+        tag = new TagComponent.OutlineTag(id, geometry, { editable: true, text: "polygon" });
+      } else {
+        throw new Error("Unsupported geometry type");
+      }
+
+      var onTagGeometryChanged = function (tag: { id: any; geometry: any; }) { console.log(tag.id, tag.geometry); };
+      tag.on(TagComponent.OutlineTag.geometrychanged, onTagGeometryChanged);
+
+      tagComponent.add([tag]);
+    });
+
+    // Tags are related to a specific node, remove them when node changes
+    viewer.on(Viewer.nodechanged, function () {
+      tagComponent.removeAll();
+    });
+
+    window.addEventListener("resize", function () { viewer.resize(); });
+  }, [ uniqKey, isTwoWindowsType ])
+
+  const positionInputOnChange = (event: any) => {
+    const value = event.target.value;
+    const [lan, lng] = value.split(',');
+    const pos = {
+      lat: parseFloat(lan),
+      lng: parseFloat(lng)
     }
+    setCoordinates([ pos.lat, pos.lng ])
+    viewer.moveCloseTo(pos.lat, pos.lng)
+  }
 
-    const onEnter = (e: any) => {
-      e.key === 'Enter' && positionInputOnChange(e)
-    }
+  const onEnterPosition = (e: any) => {
+    e.key === 'Enter' && positionInputOnChange(e)
+  }
 
-    const generateInfo = useCallback(() => {
-      if (!position || !elevationData || !pov) return;
+  const keyInputOnChange = (event: any) => {
+    const value = event.target.value;
+    viewer.moveToKey(value)
+  }
 
-      setData({ position: {
-        latAndLong: `${position.lat}, ${position.lng}`,
-        ...position
-      }, pov, elevation: elevationData})
+  const onEnterKey = (e: any) => {
+    e.key === 'Enter' && keyInputOnChange(e)
+  }
 
-          const id = new Date().toISOString()
-          return {
-            id,
-            inputData: 
-            { position,
-              pov,
-              elevation: elevationData
-            }
-          } as PanoType;
-      }, [elevationData, position, pov, setData])
+  useEffect(() => {
+    if (!properties || !coordinates) return 
 
-    const typeInfoHandle = (event: any) => {
-      const value = event.target.value;
-      value && setTypeInfo(value)
-    }
+    const treesData: Tree[] = trees.map(({ RtM, RtCr }) => {
+      const [ x0, y0, x1, y1 ] = RtM
+      const [ crX0, crX1, crY0 ] = RtCr || []
+      const x = (x0 + x1)/2
+      const y = (y0 + y1)/2
+      const az = deg2rad((0.5 - x)*180) + camH
+      const pitch = deg2rad((y - 0.5)*360)
+      const dist = camH * ctg(pitch);
+      const coordResult = isTwoWindowsType ? { isPlaneHoriz: false, imTrKey } : calculateCoord1(coordinates, dist, az)
+      // Tr_W = 2*Math.Pi*dist*abs(Tr_Unbound.Rt.Rt0.x0 - Tr_Unbound.Rt.Rt0.x1);
+      const sizes: TreeSizes = {
+        width: 2*Math.PI*dist*Math.abs(x0 - x1),
+        height: dist*(Math.tan(crY0) - Math.tan(y1)),
+        widthCr: 2*Math.PI*dist*Math.abs(crX0 - crX1)
+      }
+      // Tr_Cr = 2*Math.Pi*dist*abs(Tr_Unbound.Rt.Rt1.x0 - Tr_Unbound.Rt.Rt1.x1);
+      // Tr_H = dist*(tg(Tr_Unbound.Rt.Rt1.y0) - tg(Tr_Unbound.Rt.Rt0.y1));
+      return { az, pitch, ...coordResult, sizes } as any
+    })
 
-    useEffect(() => {
-      const info = generateInfo()
-      setInfo(info)
-    }, [ generateInfo ])
+    setData({
+      properties: properties,
+      geometry: { coordinates },
+      trees: treesData,
+      camH
+    })
+  }, [properties, coordinates, setData, initialData.camH, camH, isTwoWindowsType, imTrKey, trees])
 
-    useEffect(() =>{
-      getPosition && elevation.getElevationForLocations({ locations: [ getPosition ] }, 
-        ([ value ]: any[]) => setElevationData(value))
-    }, [elevation, getPosition])
+  const onSelectInitialFile = (res: Image) => {
+    setData(res)
+  }
 
-    const viewPano = useMemo(() => {
-      const initPosition = position || initialData?.position
-      const initPov = pov || initialData?.pov
-      if (!initPosition) return null;
-
-      return <><ReactStreetview
-        apiKey={apiKey}
-        streetViewPanoramaOptions={{
-          position: initPosition,
-          pov: initPov
-        }}
-        onPositionChanged={onChangePosition}
-        onPovChanged={onChangePov}
-      />
-      <NavigationMap position={initPosition} onClick={(pos) => setPosition(pos)}/>
-      </>
-  }, [ position, pov, initialData ])
-
-    const onSelectInitialFile = (res: PanoType) => {
-      const { inputData: { position, pov, elevation } } = res
-      setPosition(position)
-      setPov(pov)
-      setElevationData(elevation)
-    }
-
-		return (
-      <div
-      style={{
-        width: '50%'
-			}}>
-        <div className='marker'></div>
-        <div className='pano'>{viewPano}</div>
-        <Card>
-          <Card.Body>
-            <Card.Title className='d-flex justify-content-between'>
-              <FormControl
-                className='col-md-4 col-sm-12'
-                onBlur={positionInputOnChange}
-                onDragEnter={positionInputOnChange}
-                onKeyDown={onEnter}
-                placeholder='00.12345, 00.12345'
-              />
-              <ToggleButtonGroup className="ml-4 col-md-2 col-sm-12" type='radio' name='info-type' vertical onClick={typeInfoHandle} value={typeInfo}>
-                <ToggleButton variant='outline-warning' value='text'>Text</ToggleButton>
-                <ToggleButton variant='outline-warning' value='json'>Json</ToggleButton>
-              </ToggleButtonGroup>
-              <ButtonGroup vertical className='col-md-4 col-sm-12'>
-                <JsonLoadFileInput onChange={onSelectInitialFile}/>
-                <Button variant="light" onClick={() => saveJson(info, 'inputData')}>Save to JSON</Button>
-              </ButtonGroup>
-            </Card.Title>
-            <Card.Footer>
-              {typeInfo === 'text' ? <ViewInputData inputData={info} /> : <ReactJson src={info} />}
-            </Card.Footer>
-          </Card.Body>
-        </Card>
-			</div>
-		);
+  return (
+    <div className='pano'>
+      <div className='map-container'>
+        <div id={uniqKey} style={{ height: '100%' }}></div>
+        <ButtonGroup className='nav-button-container'>
+          {/* <Button variant='outline-secondary' onClick={() => changeMode(TagComponent.TagMode.CreatePoint)}>Точка</Button> */}
+          <Button  variant="light" onClick={() => { 
+            changeMode(TagComponent.TagMode.CreateRect)
+            setCalculateCr(true)
+          }} disabled={calculateCr}>Позначити стовбур</Button>
+          <Button  variant="light" onClick={() => { 
+            changeMode(TagComponent.TagMode.CreateRect)
+            setCalculateCr(false)
+          }} disabled={!calculateCr}>Позначити крону</Button>
+          <Button  variant="light" onClick={() => changeMode(TagComponent.TagMode.Default)}>Відмітити</Button>
+          <JsonLoadFileInput onChange={onSelectInitialFile} />
+          <Button variant="light" onClick={() => saveJson(initialData, 'imageData')}>Зберегти JSON</Button>
+        </ButtonGroup>
+      </div>
+      <Card>
+        <Card.Body>
+          <Card.Title className='d-flex justify-content-between'>
+            <FormControl
+              className='col-md-4 col-sm-12'
+              onBlur={positionInputOnChange}
+              onDragEnter={positionInputOnChange}
+              onKeyDown={onEnterPosition}
+              placeholder='00.12345, 00.12345'
+            />
+            <FormControl
+              className='col-md-4 col-sm-12'
+              onBlur={keyInputOnChange}
+              onDragEnter={keyInputOnChange}
+              onKeyDown={onEnterKey}
+              placeholder='Enter key'
+            />
+          </Card.Title>
+          <Card.Footer>
+            <ReactJson src={initialData} />
+          </Card.Footer>
+        </Card.Body>
+      </Card>
+    </div>
+  );
 }

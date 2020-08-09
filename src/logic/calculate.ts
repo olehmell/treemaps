@@ -1,9 +1,9 @@
-import { InputPanoData, InitialData } from './../types';
+import { Image, ResultData, TreeSizes } from './../types';
 import { treemap_calculator } from './calculator';
 
 type Data = {
-  firstPanoData?: InputPanoData,
-  secondPanoData?: InputPanoData
+  firstImageData?: Image,
+  secondImageData?: Image
 }
 
 type InputData = {
@@ -15,43 +15,53 @@ type InputData = {
   azBA_d:number
 };
 
-export const calculate = ({ firstPanoData, secondPanoData }: Data) => {
+export const calculate = ({ firstImageData, secondImageData }: Data) => {
   try {
-    if (!firstPanoData || !secondPanoData)
+    if (!firstImageData || !secondImageData)
       throw new Error('Input data is empty')
 
-    console.log(firstPanoData, secondPanoData)
+    console.log(firstImageData, secondImageData)
 
-    const { position: { lat: latC_d, lng: longC_d }, pov: { heading: azCA_d } } = firstPanoData
-    const { position: { lat: latB_d, lng: longB_d }, pov: { heading: azBA_d } } = secondPanoData
-    const inputData: InputData = {
-      latC_d,
-      longC_d,
-      azCA_d,
-      latB_d,
-      longB_d,
-      azBA_d
-    }
-    const { lat_A_d, long_A_d, a_r, b_r, c_r } = treemap_calculator(inputData)
-    return {
-      id: new Date().toISOString(),
-      user_id: 'Name',
-      session_id: 'Test',
-      outputData: {
-        position: {
-          latAndLong: `${lat_A_d}, ${long_A_d}`,
-          lat_A_d,
-          long_A_d
-        },
-        a_r,
-        b_r,
-        c_r
-      },
-      inputData: {
-        firstPanoData,
-        secondPanoData
+    const { geometry: {  coordinates: [ latC_d, longC_d ] }, trees: firstImTrees, properties: { key: im0Key } } = firstImageData
+    const { geometry: {  coordinates: [ latB_d, longB_d ] }, trees: secondImTrees, properties: { key: im1Key } } = secondImageData
+
+    const treePairs = firstImTrees.map(( { az: azCA_d, imTrKey: im0TrKey, sizes: firstSizes = {} as TreeSizes }, i) => {
+      const { az: azBA_d, imTrKey: im1TrKey, sizes: secondSizes = {} as TreeSizes } = secondImTrees[i] || {} as any
+      const inputData: InputData = {
+        latC_d,
+        longC_d,
+        azCA_d,
+        latB_d,
+        longB_d,
+        azBA_d
       }
-    } as InitialData
+
+      const coord_2 = treemap_calculator(inputData)
+
+      const sizes: TreeSizes = {
+        width: (firstSizes.width - secondSizes.width)/2,
+        widthCr: (firstSizes.widthCr - secondSizes.widthCr)/2,
+        height: (firstSizes.height - secondSizes.height)/2
+      }
+
+      // TODO calculate width and height
+      return {
+        im0TrKey,
+        im1TrKey,
+        trKey: `${im0TrKey}_${im1TrKey}_${new Date().getMilliseconds()}`,
+        coord_2,
+        sizes
+      }
+    })
+
+    return {
+      pair: {
+        im0Key,
+        im1Key,
+        treePairs
+      },
+      imgs: [firstImageData, secondImageData]
+    } as ResultData
   } catch (err) {
     console.log(err.message)
     return { error: err.message }

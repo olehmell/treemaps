@@ -1,5 +1,5 @@
 import React from 'react';
-import { FormLabel, FormControl } from 'react-bootstrap';
+import { FormLabel, FormControl, Button } from 'react-bootstrap';
 import { parseJsonFromFile } from '../logic/parseInputData';
 
 type Props = {
@@ -8,8 +8,8 @@ type Props = {
 
 const FileInput: React.FunctionComponent<Props> = ({ onChange }) => {
   const id = Math.ceil(Math.random() * 100);
-    return <FormLabel htmlFor={"fileUpload-" + id} style={{ cursor: "pointer" }}>
-    <div className='btn btn-light'>Import data</div>
+    return <FormLabel htmlFor={"fileUpload-" + id} style={{ cursor: "pointer", marginBottom: '0' }}>
+    <Button variant='light'>Import data</Button>
       <FormControl
           id={"fileUpload-" + id}
           type="file"
