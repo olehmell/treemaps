@@ -68,10 +68,12 @@ function App() {
         </div>
       )}
       <div className="maps-module d-flex">
-        <Pano initialData={firstImageData} setData={setFirstData} />
-        {isTwoWindowsType && (
-          <Pano initialData={secondImageData} setData={setSecondData} />
-        )}
+        {isTwoWindowsType
+          ? (<>
+              <Pano initialData={firstImageData} setData={setFirstData} />
+              <Pano initialData={secondImageData} setData={setSecondData} />
+            </>)
+          : <Pano initialData={firstImageData} setData={setFirstData} />}
       </div>
     </div>
   );
