@@ -6,7 +6,7 @@ import ReactJson from 'react-json-view'
 import JsonLoadFileInput from './JsonLoadFileInput';
 import 'mapillary-js/dist/mapillary.min.css';
 import { Viewer, TagComponent } from 'mapillary-js';
-import { deg2rad, ctg, reckon, rad2deg } from '../logic/calculator'
+import { ctg, reckon, rad2deg } from '../logic/calculator'
 import { useMerasurementTypeContext } from './TypeContext';
 
 type Props = {
@@ -24,8 +24,8 @@ const initImg = {
 } as Image
 
 
-export const calculateCoord1 = ([ lat, lon ]: number[], dist: number, az: number) => {
-  const { latA_r, longA_r } = reckon(lat, lon, dist, az);
+export const calculateCoord1 = ([ lat, lon ]: number[], dist: number, az_d: number) => {
+  const { latA_r, longA_r } = reckon(lat, lon, dist, az_d);
   return {
     is_Plane_Horiz: true,
     coord_1: {
@@ -39,7 +39,6 @@ export const calculateCoord1 = ([ lat, lon ]: number[], dist: number, az: number
 
 export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, setData }) => {
   const [uniqKey] = useState(`mappilary-js-${new Date().getTime()}`)
-  const [ viewKey, setViewKey ] = useState<string>()
   const [tagComponent, setTagComponent] = useState<any>();
   const [viewer, setViewer] = useState<any>()
   const [ camH ] = useState(initialData.camH)
@@ -128,8 +127,6 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, se
 
       } else if (geometry instanceof TagComponent.PointGeometry) {
         tag = new TagComponent.SpotTag(id, geometry, { editable: true, text: "point" });
-        // const [ x0, y0 ] = geometry.point
-        // setXAndY([ x0, y0 ])
       } else if (geometry instanceof TagComponent.PolygonGeometry) {
         tag = new TagComponent.OutlineTag(id, geometry, { editable: true, text: "polygon" });
       } else {
@@ -182,19 +179,20 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, se
       const [ crX0, crX1, crY0 ] = RtCr || []
       const x = (x0 + x1)/2
       const y = (y0 + y1)/2
-      const az = deg2rad((0.5 - x)*180) + camH
-      const pitch = deg2rad((y - 0.5)*360)
-      const dist = camH * ctg(pitch);
-      const coordResult = isTwoWindowsType ? { isPlaneHoriz: false, imTrKey } : calculateCoord1(coordinates, dist, az)
+      const az_d = (x - 0.5)*360 + properties.ca
+      const pitch_d = (0.5 - y)*180
+      const dist = camH * ctg(pitch_d);
+      console.log('dist', dist)
+      const coordResult = isTwoWindowsType ? { isPlaneHoriz: false, imTrKey } : calculateCoord1(coordinates, dist, az_d)
       // Tr_W = 2*Math.Pi*dist*abs(Tr_Unbound.Rt.Rt0.x0 - Tr_Unbound.Rt.Rt0.x1);
       const sizes: TreeSizes = {
-        width: 2*Math.PI*dist*Math.abs(x0 - x1),
-        height: dist*(Math.tan(crY0) - Math.tan(y1)),
-        widthCr: 2*Math.PI*dist*Math.abs(crX0 - crX1)
+        width: Math.abs(2*Math.PI*dist*Math.abs(x0 - x1)),
+        height: Math.abs(dist*(Math.tan(crY0) - Math.tan(y1))),
+        widthCr: Math.abs(2*Math.PI*dist*Math.abs(crX0 - crX1))
       }
       // Tr_Cr = 2*Math.Pi*dist*abs(Tr_Unbound.Rt.Rt1.x0 - Tr_Unbound.Rt.Rt1.x1);
       // Tr_H = dist*(tg(Tr_Unbound.Rt.Rt1.y0) - tg(Tr_Unbound.Rt.Rt0.y1));
-      return { az, pitch, ...coordResult, sizes } as any
+      return { az_d, pitch_d, ...coordResult, sizes } as any
     })
 
     setData({
@@ -214,8 +212,8 @@ export const Pano: React.FunctionComponent<Props> = ({ initialData = initImg, se
       <div className='map-container'>
         <div id={uniqKey} style={{ height: '100%' }}></div>
         <ButtonGroup className='nav-button-container'>
-          {/* <Button variant='outline-secondary' onClick={() => changeMode(TagComponent.TagMode.CreatePoint)}>Точка</Button> */}
-          <Button  variant="light" onClick={() => { 
+          {/* <Button variant="light" onClick={() => changeMode(TagComponent.TagMode.CreatePoint)}>Точка</Button> */}
+          <Button variant="light" onClick={() => { 
             changeMode(TagComponent.TagMode.CreateRect)
             setCalculateCr(true)
           }} disabled={calculateCr}>Позначити стовбур</Button>

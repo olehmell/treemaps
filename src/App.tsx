@@ -43,12 +43,6 @@ function App() {
         offlabel="Одновіконий режим"
         onChange={() => toggleMerasurementType()}
       />
-      <div className="maps-module d-flex">
-        <Pano initialData={firstImageData} setData={setFirstData} />
-        {isTwoWindowsType && (
-          <Pano initialData={secondImageData} setData={setSecondData} />
-        )}
-      </div>
       {isTwoWindowsType && (
         <div className="CalculatePanel">
           <div className="d-flex m-1 my-2 w-100 justify-content-between">
@@ -73,6 +67,12 @@ function App() {
           {calculateData && <ReactJson src={calculateData} />}
         </div>
       )}
+      <div className="maps-module d-flex">
+        <Pano initialData={firstImageData} setData={setFirstData} />
+        {isTwoWindowsType && (
+          <Pano initialData={secondImageData} setData={setSecondData} />
+        )}
+      </div>
     </div>
   );
 }

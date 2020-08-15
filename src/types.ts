@@ -60,8 +60,8 @@ export type TreeSizes = {
 }
 
 export type Tree = {
-  az: number,
-  pitch: number,
+  az_d: number,
+  pitch_d: number,
   imTrKey: string,
   sizes?: TreeSizes,
   isPlaneHoriz: boolean,

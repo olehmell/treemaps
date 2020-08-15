@@ -25,8 +25,8 @@ export const calculate = ({ firstImageData, secondImageData }: Data) => {
     const { geometry: {  coordinates: [ latC_d, longC_d ] }, trees: firstImTrees, properties: { key: im0Key } } = firstImageData
     const { geometry: {  coordinates: [ latB_d, longB_d ] }, trees: secondImTrees, properties: { key: im1Key } } = secondImageData
 
-    const treePairs = firstImTrees.map(( { az: azCA_d, imTrKey: im0TrKey, sizes: firstSizes = {} as TreeSizes }, i) => {
-      const { az: azBA_d, imTrKey: im1TrKey, sizes: secondSizes = {} as TreeSizes } = secondImTrees[i] || {} as any
+    const treePairs = firstImTrees.map(( { az_d: azCA_d, imTrKey: im0TrKey, sizes: firstSizes = {} as TreeSizes }, i) => {
+      const { az_d: azBA_d, imTrKey: im1TrKey, sizes: secondSizes = {} as TreeSizes } = secondImTrees[i] || {} as any
       const inputData: InputData = {
         latC_d,
         longC_d,
